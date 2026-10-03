@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>رحلة استكشاف الذكاء الاصطناعي | لعبة مراحل تفاعلية</title>
+<!-- Tajawal Font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<!-- Three.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root {
+--bg-dark: #0c1222;
+--panel-bg: #1a2340;
+--panel-border: #2c3a63;
+--gold: #e8a33d;
+--cyan: #5fd4e8;
+--green: #4fd88a;
+--red: #ef5a6f;
+--purple: #b18cf0;
+--text-light: #f0f4f8;
+--text-muted: #a0aec0;
+}
+
+* {
+box-sizing: border-box;
+margin: 0;
+padding: 0;
+font-family: 'Tajawal', sans-serif;
+user-select: none;
+}
+
+body {
+background-color: var(--bg-dark);
+color: var(--text-light);
+background-image: radial-gradient(rgba(95, 212, 232, 0.08) 1px, transparent 0);
+background-size: 24px 24px;
+min-height: 100vh;
+display: flex;
+justify-content: center;
+align-items: flex-start;
+overflow-x: hidden;
+}
+
+.app-container {
+width: 100%;
+max-width: 560px;
+min-height: 100vh;
+background: rgba(12, 18, 34, 0.85);
+backdrop-filter: blur(8px);
+border-left: 1px solid var(--panel-border);
+border-right: 1px solid var(--panel-border);
+display: flex;
+flex-direction: column;
+position: relative;
+box-shadow: 0 0 30px rgba(0,0,0,0.5);
+}
+
+/* Header Bar */
+.top-bar {
+position: sticky;
+top: 0;
+z-index: 100;
+background: rgba(26, 35, 64, 0.95);
+border-bottom: 1px solid var(--panel-border);
+padding: 12px 16px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+.progress-container {
+flex-grow: 1;
+margin-left: 15px;
+}
+
+.progress-bar {
+height: 8px;
+background: rgba(255,255,255,0.1);
+border-radius: 4px;
+overflow: hidden;
+}
+
+.progress-fill {
+height: 100%;
+background: linear-gradient(90deg, var(--cyan), var(--gold));
+width: 0%;
+transition: width 0.3s ease;
+}
+
+.score-badge {
+background: rgba(232, 163, 61, 0.15);
+border: 1px solid var(--gold);
+color: var(--gold);
+padding: 4px 12px;
+border-radius: 20px;
+font-weight: bold;
+font-size: 0.9rem;
+display: flex;
+align-items: center;
+gap: 5px;
+}
+
+/* Screen Wrapper */
+.screen {
+display: none;
+padding: 20px;
+flex-direction: column;
+flex-grow: 1;
+animation: fadeIn 0.3s ease-in-out;
+}
+
+.screen.active {
+display: flex;
+}
+
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(8px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+/* UI Elements */
+.card {
+background: var(--panel-bg);
+border: 1px solid var(--panel-border);
+border-radius: 12px;
+padding: 18px;
+margin-bottom: 16px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.btn {
+background: var(--gold);
+color: #0c1222;
+border: none;
+padding: 14px 20px;
+border-radius: 10px;
+font-weight: 800;
+font-size: 1rem;
+cursor: pointer;
+transition: all 0.2s ease;
+text-align: center;
+display: block;
+width: 100%;
+box-shadow: 0 4px 10px rgba(232, 163, 61, 0.2);
+}
+
+.btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 6px 15px rgba(232, 163, 61, 0.3);
+}
+
+.btn-outline {
+background: transparent;
+border: 1px solid var(--cyan);
+color: var(--cyan);
+box-shadow: none;
+}
+
+.btn-outline:hover {
+background: rgba(95, 212, 232, 0.1);
+}
+
+h1, h2, h3 { color: #fff; margin-bottom: 12px; }
+p { color: var(--text-muted); line-height: 1.6; font-size: 0.95rem; margin-bottom: 12px; }
+
+/* Start Screen */
+.start-hero {
+text-align: center;
+padding: 30px 10px;
+}
+
+.start-hero h1 { font-size: 1.8rem; color: var(--gold); }
+
+.station-list {
+display: flex;
+flex-direction: column;
+gap: 10px;
+margin: 20px 0;
+}
+
+.station-item {
+display: flex;
+align-items: center;
+background: rgba(255,255,255,0.03);
+border: 1px solid var(--panel-border);
+padding: 12px 16px;
+border-radius: 8px;
+}
+
+.station-num {
+width: 28px;
+height: 28px;
+border-radius: 50%;
+background: var(--purple);
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+font-weight: bold;
+margin-left: 12px;
+font-size: 0.85rem;
+}
+
+/* Visual Containers */
+#canvas-container {
+width: 100%;
+height: 220px;
+background: #080d1a;
+border-radius: 10px;
+overflow: hidden;
+margin-bottom: 16px;
+position: relative;
+border: 1px solid var(--panel-border);
+}
+
+/* Term Cards */
+.terms-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+margin: 12px 0;
+}
+
+.term-card {
+background: rgba(95, 212, 232, 0.05);
+border: 1px solid rgba(95, 212, 232, 0.2);
+padding: 10px;
+border-radius: 8px;
+}
+
+.term-card strong {
+display: block;
+color: var(--cyan);
+font-size: 0.85rem;
+margin-bottom: 4px;
+}
+
+.term-card span {
+font-size: 0.8rem;
+color: var(--text-muted);
+}
+
+.info-box {
+background: rgba(177, 140, 240, 0.1);
+border-right: 3px solid var(--purple);
+padding: 10px 14px;
+border-radius: 4px;
+font-size: 0.85rem;
+margin-top: 10px;
+}
+
+/* Speed Challenge */
+.game-area {
+position: relative;
+width: 100%;
+height: 320px;
+background: #080d1a;
+border-radius: 10px;
+overflow: hidden;
+border: 1px solid var(--panel-border);
+margin-bottom: 15px;
+}
+
+.falling-card {
+position: absolute;
+background: var(--panel-bg);
+border: 1px solid var(--cyan);
+color: #fff;
+padding: 8px 14px;
+border-radius: 20px;
+font-size: 0.85rem;
+cursor: pointer;
+box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+transition: transform 0.1s;
+}
+
+.falling-card:active { transform: scale(0.95); }
+
+/* Quiz Screen */
+.option-btn {
+background: rgba(255,255,255,0.04);
+border: 1px solid var(--panel-border);
+color: var(--text-light);
+padding: 12px 16px;
+border-radius: 8px;
+margin-bottom: 10px;
+cursor: pointer;
+text-align: right;
+width: 100%;
+font-size: 0.95rem;
+transition: all 0.2s;
+}
+
+.option-btn:hover {
+border-color: var(--cyan);
+background: rgba(95, 212, 232, 0.05);
+}
+
+.option-btn.correct {
+background: rgba(79, 216, 138, 0.2) !important;
+border-color: var(--green) !important;
+color: #fff;
+}
+
+.option-btn.wrong {
+background: rgba(239, 90, 111, 0.2) !important;
+border-color: var(--red) !important;
+color: #fff;
+}
+
+.feedback-card {
+margin-top: 12px;
+padding: 12px;
+border-radius: 8px;
+font-size: 0.9rem;
+display: none;
+}
+
+.feedback-card.show { display: block; }
+.feedback-card.correct { background: rgba(79, 216, 138, 0.15); border: 1px solid var(--green); color: var(--green); }
+.feedback-card.wrong { background: rgba(239, 90, 111, 0.15); border: 1px solid var(--red); color: var(--red); }
+
+/* Stars & Results */
+.stars-row {
+display: flex;
+justify-content: center;
+gap: 10px;
+font-size: 2rem;
+color: var(--gold);
+margin: 15px 0;
+}
+
+.review-item {
+background: rgba(255,255,255,0.02);
+border: 1px solid var(--panel-border);
+border-radius: 8px;
+padding: 12px;
+margin-bottom: 10px;
+font-size: 0.85rem;
+}
+
+.badge-display {
+text-align: center;
+padding: 20px;
+}
+
+.badge-icon {
+font-size: 4rem;
+margin-bottom: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+* { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-container">
+<!-- Top Progress Bar -->
+<div class="top-bar" id="top-bar" style="display:none;">
+<div class="progress-container">
+<div class="progress-bar">
+<div class="progress-fill" id="progress-fill"></div>
+</div>
+</div>
+<div class="score-badge">
+⚡ <span id="global-score">0</span>
+</div>
+</div>
+
+<!-- 1. Start Screen -->
+<div class="screen active" id="screen-start">
+<div class="start-hero">
+<h1>رحلة الذكاء الاصطناعي</h1>
+<p>مادة تقنية المعلومات - الصف الحادي عشر</p>
+</div>
+<div class="card">
+<h3>عن اللعبة التعليمية</h3>
+<p>اخترق عالم الذكاء الاصطناعي وتحدّ قدراتك عبر 6 محطات تفاعلية شيقة، واجمع النقاط والأوسمة لتصبح خبيراً متقدماً!</p>
+<div class="station-list" id="start-station-list"></div>
+<button class="btn" onclick="game.startJourney()">ابدأ المغامرة الآن 🚀</button>
+</div>
+</div>
+
+<!-- 2. Station Intro / Explanation Screen -->
+<div class="screen" id="screen-explain">
+<h2 id="explain-title">عنوان المحطة</h2>
+<div id="canvas-container"></div>
+<div class="card">
+<p id="explain-text">شرح المفهوم...</p>
+<div class="terms-grid" id="explain-terms"></div>
+<div class="info-box" id="explain-info"></div>
+</div>
+<button class="btn" onclick="game.nextSubStep()">الانتقال لتحدي السرعة ⚡</button>
+</div>
+
+<!-- 3. Speed Challenge Screen -->
+<div class="screen" id="screen-speed">
+<h2>تحدي التقاط المصطلحات</h2>
+<p>التقط البطاقات التابعة لمفهوم المحطة فقط! (+10 للصحيح، -5 للخطأ)</p>
+<div style="display:flex; justify-between; margin-bottom: 8px; font-weight:bold;">
+<span>⏱️ المتبقي: <span id="speed-timer" style="color:var(--gold)">15</span>s</span>
+<span>🎯 النقاط: <span id="speed-score">0</span></span>
+</div>
+<div class="game-area" id="game-area"></div>
+<button class="btn" id="speed-next-btn" style="display:none;" onclick="game.nextSubStep()">متابعة للأسئلة 📝</button>
+</div>
+
+<!-- 4. Quiz Questions Screen -->
+<div class="screen" id="screen-quiz">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+<h2>اختبار المفاهيم</h2>
+<span style="font-size:0.85rem; color:var(--text-muted)">سؤال <span id="quiz-q-num">1</span> من 3</span>
+</div>
+<div class="card">
+<h3 id="quiz-question" style="font-size:1rem; margin-bottom:15px;">السؤال هنا؟</h3>
+<div id="quiz-options"></div>
+<div class="feedback-card" id="quiz-feedback"></div>
+</div>
+<button class="btn" id="quiz-next-btn" style="display:none;" onclick="game.handleQuizNext()">السؤال التالي ➔</button>
+</div>
+
+<!-- 5. Station Result Screen -->
+<div class="screen" id="screen-station-result">
+<div style="text-align: center;" class="card">
+<h2>إنجاز المحطة!</h2>
+<div class="stars-row" id="station-stars"></div>
+<p id="station-result-text">أداء ممتاز!</p>
+<button class="btn" onclick="game.finishStation()">المحطة التالية ➔</button>
+</div>
+</div>
+
+<!-- 6. Final Scenario Challenge Screen -->
+<div class="screen" id="screen-scenario">
+<h2>التحدي الأخير: موقف تطبيقي</h2>
+<div class="card">
+<p id="scenario-desc">وصف الموقف...</p>
+<div id="scenario-options"></div>
+<div class="feedback-card" id="scenario-feedback"></div>
+</div>
+<button class="btn" id="scenario-next-btn" style="display:none;" onclick="game.showFinalResults()">عرض النتيجة النهائية 🏆</button>
+</div>
+
+<!-- 7. Final Results & Certificate Screen -->
+<div class="screen" id="screen-final">
+<div class="card badge-display">
+<div class="badge-icon" id="final-badge-icon">🥇</div>
+<h2 id="final-badge-title">الوسام الذهبي</h2>
+<p>مجموع نقاطك: <strong id="final-total-score" style="color:var(--gold); font-size:1.2rem;">0</strong></p>
+</div>
+
+<div class="card">
+<h3>ملخص النجوم لكل محطة</h3>
+<div id="final-stars-summary"></div>
+</div>
+
+<div class="card">
+<h3>سجل مراجعة الإجابات الخاطئة</h3>
+<div id="final-review-list"></div>
+</div>
+
+<button class="btn" onclick="location.reload()">إعادة اللعب 🔄</button>
+</div>
+</div>
+
+<script>
+// --- Data Structure derived explicitly from Lesson Document ---
+const lessonData = {
+title: "الذكاء الاصطناعي (Artificial Intelligence)",
+grade: 11,
+stations: [
+{
+id: 1,
+title: "أسس الذكاء الاصطناعي وركائزه",
+explain: "الذكاء الاصطناعي هو أحد مجالات علوم الحاسوب يهدف لتصميم أنظمة تؤدي مهام تتطلب ذكاءً بشرياً. ظهر المصطلح عام 1956 بواسطة جون ماكارثي. يعتمد على 4 ركائز أساسية.",
+terms: [
+{ term: "Machine Learning", desc: "تعلم الآلة من البيانات دون برمجة صريحة" },
+{ term: "Deep Learning", desc: "شبكات عصبية اصطناعية مستوحاة من الدماغ البشري" },
+{ term: "NLP", desc: "فهم اللغة البشرية والتفاعل معها" },
+{ term: "Computer Vision", desc: "تمكين الآلات من رؤية وفهم الصور والفيديو" }
+],
+info: "معلومة: تمثل الخوارزميات التعليمات المنظمة التي تمكّن الحاسوب من تحليل البيانات واتخاذ القرارات بشكل مستقل.",
+visualType: "3d-brain",
+speedTargets: ["تعلم الآلة", "التعلم العميق", "معالجة اللغة", "جون ماكارثي", "الرؤية الحاسوبية"],
+speedDistractors: ["الترجمة الآلية", "النظارات الذكية", "التزييف العميق", "الطقس"],
+quiz: [
+{
+q: "من هو العالم الذي قدم مصطلح الذكاء الاصطناعي لأول مرة عام 1956م؟",
+options: ["جون ماكارثي", "آلان تورينج", "تيم بيرنرز لي", "بييل جيتس"],
+answer: 0,
+explain: "ظهر مصطلح الذكاء الاصطناعي لأول مرة عام 1956 بواسطة عالم الحاسوب جون ماكارثي (John McCarthy)."
+},
+{
+q: "أي من ركائز الذكاء الاصطناعي تعتمد على شبكات عصبية مستوحاة من بنية الدماغ البشري؟",
+options: ["التعلم العميق (Deep Learning)", "التصفية القائمة على المحتوى", "أنظمة التوصية", "الترجمة بمساعدة الحاسوب"],
+answer: 0,
+explain: "التعلم العميق هو نوع من تعلم الآلة يستخدم شبكات عصبية اصطناعية مستوحاة من بنية الدماغ البشري."
+},
+{
+q: "ما المقصود بـ الخوارزميات في بيئة الذكاء الاصطناعي؟",
+options: ["تعليمات منظمة تمكن الحاسوب من تحليل البيانات واتخاذ القرارات", "أجهزة مادية لتخزين البيانات", "تطبيقات هواتف ذكية جاهزة", "نصوص مكررة دون استجابة"],
+answer: 0,
+explain: "الخوارزميات هي تعليمات منظمة تمكّن الحواسيب من تحليل البيانات، واتخاذ القرارات، وأداء المهام بشكل مستقل."
+}
+]
+},
+{
+id: 2,
+title: "تطبيقات معالجة الصوت واللغة",
+explain: "تستخدم تقنيات معالجة اللغة الطبيعية (NLP) لتحويل الكلمات المنطوقة إلى نصوص، وتسهيل الترجمة الفورية والمساعدات الافتراضية الذكية.",
+terms: [
+{ term: "Speech Recognition", desc: "تحويل الصوت إلى نص مكتوب" },
+{ term: "VPA", desc: "المساعد الشخصي الافتراضي (Siri, Alexa)" },
+{ term: "CAT", desc: "الترجمة بمساعدة الحاسوب فورياً" }
+],
+info: "تفيد تقنيات التعرف على الكلام الأفراد ذوي الإعاقة بشكل كبير للتفاعل مع أجهزتهم بدون استخدام اليدين.",
+visualType: "svg-wave",
+speedTargets: ["Siri", "Google Assistant", "تحويل الصوت لنص", "الترجمة الفورية", "Alexa"],
+speedDistractors: ["التحيز", "التنبؤ بالطقس", "التشخيص الطبي", "تباين الصور"],
+quiz: [
+{
+q: "أي من التطبيقات التالية يُعد مثالاً على المساعد الشخصي الافتراضي (VPA)؟",
+options: ["Google Assistant", "Microsoft Excel", "Photoshop", "Google Docs"],
+answer: 0,
+explain: "تعد تطبيقات Google Assistant و Siri و Amazon Alexa من أشهر المساعدات الافتراضية الذكية."
+},
+{
+q: "ما التقنية الرئيسية التي تعتمد عليها أنظمة التعرف على الكلام تحويل الصوت إلى نص؟",
+options: ["معالجة اللغة الطبيعية (NLP)", "رؤية الحاسوب", "التزييف العميق", "الأنظمة الهجينة"],
+answer: 0,
+explain: "تقنية التعرف على الأصوات تستخدم معالجة اللغة الطبيعية (NLP) لتحويل الكلمات المنطوقة إلى نصوص."
+},
+{
+q: "ما الميزة الرئيسية للترجمة بمساعدة الحاسوب (CAT) في أدوات الاتصال كـ Zoom؟",
+options: ["توفير ترجمة النصوص والمحادثات بصورة فورية", "إعادة تصنيف الصور التلقائي", "حذف البيانات الشخصية", "إنشاء مقاطع فيديو مزيفة"],
+answer: 0,
+explain: "تقتضي تقنية الترجمة بمساعدة الحاسوب توفير إمكانية ترجمة المستندات والمحادثات بصورة فورية."
+}
+]
+},
+{
+id: 3,
+title: "الرؤية الحاسوبية وتوليد المحتوى",
+explain: "تتعامل الرؤية الحاسوبية مع التعرف على الصور، بينما تقوم تقنيات توليد النصوص والصور بإنشاء محتوى إبداعي جديد بناءً على البيانات.",
+terms: [
+{ term: "Image Recognition", desc: "تحديد وتفسير الأنماط داخل الصور" },
+{ term: "Text Generation", desc: "إنشاء نصوص ومحادثات (ChatGPT, Gemini)" },
+{ term: "Image Generation", desc: "توليد صور وفيديوهات إبداعية عالية الجودة" }
+],
+info: "من التحديات البارزة في التعرف على الصور: تباين الصور، ضوضاء الصور، تشويش الخلفية، وقيود الوقت الفعلي.",
+visualType: "3d-cube",
+speedTargets: ["ChatGPT", "Gemini", "نظارات المكفوفين", "تباين الصور", "Copilot"],
+speedDistractors: ["أتمتة المهام", "التصفية التعاونية", "قوانين الذكاء", "التنبؤ الجوي"],
+quiz: [
+{
+q: "كيف تساعد النظارات الذكية الناطقة المكفوفين وضعاف البصر؟",
+options: ["عن طريق التعرف على البيئة المحيطة ووصفها بالذكاء الاصطناعي", "بزيادة إضاءة المكان تلقائياً", "بترجمة الكلام المنطوق إلى إشارات مرئية", "بتوليد مقالات علمية طويلة"],
+answer: 0,
+explain: "تعتمد النظارات الذكية الناطقة على التعرف على الصور لمساعدة المكفوفين في معرفة البيئة المحيطة ووصفها."
+},
+{
+q: "أي مما يلي يُعد من التحديات التي تؤثر على دقة خوارزميات التعرف على الصور؟",
+options: ["ضوضاء الصورة وتشويش الخلفية", "سرعة المعالج فقط", "لغة البرمجة المستخدَمة", "سعة الذاكرة الخارجية"],
+answer: 0,
+explain: "تشمل تحديات التعرف على الصور: تباين الصور، الضوضاء (الغبار والخدوش)، تشويش الخلفية، وقيود الوقت الفعلي."
+},
+{
+q: "أي تطبيق من التطبيقات التالية يختص بتوليد النصوص والإجابة عن الأسئلة؟",
+options: ["ChatGPT و Gemini", "Google Maps", "Zoom", "VEXcode VR"],
+answer: 0,
+explain: "يعتبر ChatGPT وGemini وMicrosoft Copilot من أشهر تطبيقات توليد النصوص استجابةً للمحادثات."
+}
+]
+},
+{
+id: 4,
+title: "أنظمة التوصية والتنبؤ",
+explain: "تُستخدم أنظمة التوصية لتقديم مقترحات مخصصة بناءً على تحليل السلوك والبيانات، بينما يساعد الذكاء الاصطناعي في التنبؤ بدقة بالطقس.",
+terms: [
+{ term: "Content-based Filter", desc: "التوصية بناءً على تشابه خصائص العناصر" },
+{ term: "Collaborative Filter", desc: "التوصية بناءً على سلوك مستخدمين آخرين شبيهين" },
+{ term: "Hybrid System", desc: "دمج التصفية القائمة على المحتوى والتعاونية" }
+],
+info: "تعتمد خوارزميات التنبؤ بالطقس على تحليل كميات هائلة من بيانات الأقمار الصناعية ومحطات الأرصاد في الوقت الفعلي.",
+visualType: "svg-chart",
+speedTargets: ["تصفية قائمة على المحتوى", "تصفية تعاونية", "أنظمة هجينة", "بيانات الأقمار الصناعية", "مقترحات مخصصة"],
+speedDistractors: ["جون ماكارثي", "التزييف العميق", "البرمجة اللغوية", "التعرف على الأصوات"],
+quiz: [
+{
+q: "ما هي طريقة عمل التصفية القائمة على المحتوى (Content-based Filtering)؟",
+options: ["اقتراح عناصر تشابه الخصائص التي اختارها المستخدم سابقاً", "اقتراح عناصر بناءً على آراء أصدقاء المستخدم فقط", "عرض الإعلانات الأكثر غلاءً", "تقديم اقتراحات عشوائية تماماً"],
+answer: 0,
+explain: "تحلل التصفية القائمة على المحتوى خصائص العنصر وتقارنه بالعناصر التي اختارها أو تفاعل معها المستخدم سابقاً."
+},
+{
+q: "تسمى أنظمة التوصية التي تجمع بين التصفية المعرفية والتصفية التعاونية بـ:",
+options: ["الأنظمة الهجينة (Hybrid)", "أنظمة الرؤية", "خوارزميات التعلم العميق", "أنظمة التزييف"],
+answer: 0,
+explain: "تجمع الأنظمة الهجينة (Hybrid Filtering) بين مميزات التصفية القائمة على المحتوى والتصفية التعاونية للوصول لدقة أكبر."
+},
+{
+q: "كيف يسهم الذكاء الاصطناعي في تحسين التنبؤ بالطقس؟",
+options: ["تحليل بيانات ضخمة من الأقمار الصناعية ومحطات الأرصاد وتوفير تحذيرات مبكرة", "التحكم المباشر في حركة الرياح", "تغيير العوامل الجغرافية", "استبدال الخبراء وتهميش دورهم بالكامل"],
+answer: 0,
+explain: "يوفر الذكاء الاصطناعي معلومات أكثر دقة وتحديثات سريعة لتحذير المجتمعات من الأحوال الجوية القاسية."
+}
+]
+},
+{
+id: 5,
+title: "تطبيقات الأعمال ومستقبل الذكاء الاصطناعي",
+explain: "يُحدث الذكاء الاصطناعي ثورة في قطاعات الصحة والتعليم والنقل والطاقة، ويعيد أتمتة الوظائف الروتينية مما يطلب تطوير مهارات بشرية مكملة.",
+terms: [
+{ term: "Medical Diagnosis", desc: "تحليل الأشعة والسجلات للتنبؤ بالأمراض" },
+{ term: "Automation", desc: "أتمتة المهام الروتينية لزيادة الكفاءة" },
+{ term: "Human Skills", desc: "التفكير النقدي والإبداع والذكاء العاطفي" }
+],
+info: "تحذير مهم: لا يجوز الاعتماد الكلي على الاستشارات الطبية عبر تطبيقات الذكاء الاصطناعي دون مراجعة الطبيب المختص.",
+visualType: "3d-sphere",
+speedTargets: ["التشخيص الطبي", "أتمتة المهام", "السيارات ذاتية القيادة", "التفكير النقدي", "الذكاء العاطفي"],
+speedDistractors: ["ضوضاء الصورة", "التعرف على الأصوات", "Siri", "الخطوط العريضة"],
+quiz: [
+{
+q: "ما المهارات البشرية التي يفتقر إليها الذكاء الاصطناعي وتجعله معززاً للعمل البشري بدلاً من استبداله كلياً؟",
+options: ["الإبداع، الذكاء العاطفي، والتفكير النقدي", "سرعة المعالجة الحسابية", "حفظ وتخزين البيانات الضخمة", "استرجاع المعلومات فورياً"],
+answer: 0,
+explain: "رغم كفاءة الذكاء الاصطناعي في أتمتة المهام الروتينية، إلا أنه يفتقر للإبداع، والذكاء العاطفي، والتفاعل الإنساني."
+},
+{
+q: "كيف يساعد الذكاء الاصطناعي في مجال التشخيص الطبي؟",
+options: ["تحليل صور الأشعة والسجلات للبحث عن أنماط مرتبطة بالأمراض", "صناعة أجهزة الأشعة المادية", "الاستغناء الكامل عن الأطباء والمستشفيات", "وصف العلاج الخاطئ عشوائياً"],
+answer: 0,
+explain: "تُدرّب خوارزميات الذكاء الاصطناعي على صور الأشعة والسجلات الطبية للبحث عن أنماط متشابهة والتنبؤ بالمرض."
+},
+{
+q: "أي من المجالات التالية يُتوقع أن يلعب فيها الذكاء الاصطناعي دوراً في إدارتها مستقبلاً كما ورد بالدرس؟",
+options: ["النقل (كالمركبات ذاتية القيادة) والبيئة والتعليم", "إلغاء المدارس نهائياً", "منع استخدام الطاقة المتجددة", "تقليل جودة الإنتاج المصنعي"],
+answer: 0,
+explain: "يشمل مستقبل الذكاء الاصطناعي تطوير النقل الذكي، تخصيص التعليم، تحسين الرعاية الصحية، وترشيد الطاقة."
+}
+]
+},
+{
+id: 6,
+title: "الأخلاقيات والتحديات والتزييف العميق",
+explain: "يترتب على استخدام الذكاء الاصطناعي تحديات كبيرة كخصوصية البيانات، والتحيز، ونقص القوانين، بالإضافة لمخاطر تقنية التزييف العميق (Deepfake).",
+terms: [
+{ term: "Data Privacy", desc: "جمع واستخدام كميات ضخمة من البيانات الشخصية" },
+{ term: "Bias", desc: "تحيز الخوارزميات عرقياً أو جنسياً نتيجة بيانات غير عادلة" },
+{ term: "Deepfake", desc: "التلاعب بالصور والفيديو لإنشاء محتوى مزيف واقعي" }
+],
+info: "تأكد دائماً من صحة الأخبار والمعلومات التي تتلقاها قبل إعادة نشرها لتجنب الوقوع في فخ التزييف العميق.",
+visualType: "svg-shield",
+speedTargets: ["خصوصية البيانات", "التحيز الخوارزمي", "التزييف العميق Deepfake", "الأخلاقيات", "نشر معلومات مضللة"],
+speedDistractors: ["التعرف على الصوت", "أتمتة المصانع", "التنبؤ بالطقس", "المساعد الشخصي"],
+quiz: [
+{
+q: "ما المقصود بتقنية التزييف العميق (Deepfake)؟",
+options: ["تقنية تعتمد على AI للتلاعب بالصور والفيديو والأصوات لإنشاء محتوى مزيف واقعي", "طريقة لتشفير الرسائل النصية بين الأصدقاء", "برنامج لتسريع أداء الحاسوب", "مستشعرات لقياس درجة الحرارة"],
+answer: 0,
+explain: "التزييف العميق (Deepfake) يعتمد على الذكاء الاصطناعي في تركيب مقاطع فيديو وأصوات واقعية لمحتوى غير حقيقي."
+},
+{
+q: "ما السبب الأساسي لحدوث التمييز أو النتائج غير العادلة في خوارزميات الذكاء الاصطناعي؟",
+options: ["التحيز في تصميم الخوارزميات أو بيانات التدريب", "زيادة التمويل المالي للشركات", "سرعة الاتصال بالإنترنت", "حجم الشاشة المستخدَمة"],
+answer: 0,
+explain: "قد تُصمم الخوارزميات أو تُدرّب على بيانات تعزز تحيزات عرقية أو جنسية، مما يؤدي لنتائج غير عادلة."
+},
+{
+q: "أي من المخاطر التالية ينتج عن استخدام الذكاء الاصطناعي لعدم وجود قوانين تنظيمية كافية؟",
+options: ["وقوع أخطار أخلاقية وقانونية وسوء استخدام للبيانات", "تحسين جودة الصوت تلقائياً", "زيادة دقة ترجمة اللغة", "تقليل استهلاك الطاقة"],
+answer: 0,
+explain: "غياب اللوائح القوية والقوانين التنظيمية قد يفتح المجال لانتهاك الخصوصية والمخاطر الأخلاقية."
+}
+]
+}
+],
+finalScenario: {
+title: "سيناريو القرار الذكي في مؤسسة صحية",
+description: "أنت تعمل كمستشار تقني في مستشفى أهلي. رغبت الإدارة في تطبيق نظام ذكاء اصطناعي لتشخيص الأمراض من صور الأشعة ولأتمتة خدمة العملاء والرد الآلي. ما هو الإجراء الأمثل للحفاظ على جودة الخدمة وأخلاقيات الذكاء الاصطناعي؟",
+options: [
+{
+text: "الاعتماد الكامل على النظام الآلي واستبدال أطباء الأشعة وموظفي الاستقبال فوراً لتوفير التكاليف.",
+type: "غير مناسب",
+explain: "إجراء غير مناسب! لأن الذكاء الاصطناعي يفتقر إلى الذكاء العاطفي والحس الإنساني، ولا يمكن الاستغناء عن الأطباء للتحقق من التشخيص لتجنب الأخطاء الطبية والحفاظ على سلامة المرضى."
+},
+{
+text: "تطبيق النظام كأداة مساعدة للأطباء مع تشفير بيانات المرضى، وتدريب الموظفين على التفكير النقدي ومراجعة نتائج النظام.",
+type: "مثالي",
+explain: "قرار مثالي! يجمع بين ميزات أتمتة الذكاء الاصطناعي والرقابة البشرية، مع الحفاظ على خصوصية البيانات وتطوير المهارات المكملة للبشر."
+},
+{
+text: "رفض استخدام تقنيات الذكاء الاصطناعي نهائياً بسبب مخاطر الخصوصية والتمسك بالعمل اليدوي التقليدي.",
+type: "مقبول",
+explain: "قرار مقبول حذراً ولكن متأخر تقنياً؛ فعدم مواكبة الذكاء الاصطناعي يُفوت فرصة تحسين سرعة وكفاءة الخدمات الصحية بشكل آمن."
+}
+]
+}
+};
+
+// --- Game Logic Engine ---
+class GameEngine {
+constructor(data) {
+this.data = data;
+this.currentStationIdx = 0;
+this.subStep = 0; // 0: explain, 1: speed, 2: quiz, 3: result
+this.globalScore = 0;
+this.stationStars = [];
+this.wrongQuestions = [];
+
+// Speed Game Variables
+this.speedTimer = null;
+this.speedTimeLeft = 15;
+this.speedScore = 0;
+
+// Quiz Variables
+this.quizCurrentQ = 0;
+this.quizScore = 0;
+
+// Three.js variables
+this.scene = null;
+this.camera = null;
+this.renderer = null;
+this.currentMesh = null;
+}
+
+init() {
+this.renderStartScreen();
+this.loadBestScore();
+}
+
+renderStartScreen() {
+const listEl = document.getElementById('start-station-list');
+listEl.innerHTML = '';
+this.data.stations.forEach(st => {
+const item = document.createElement('div');
+item.className = 'station-item';
+item.innerHTML = `
+<div class="station-num">${st.id}</div>
+<div>
+<strong style="font-size:0.9rem; color:#fff;">${st.title}</strong>
+</div>
+`;
+listEl.appendChild(item);
+});
+}
+
+startJourney() {
+document.getElementById('screen-start').classList.remove('active');
+document.getElementById('top-bar').style.display = 'flex';
+this.currentStationIdx = 0;
+this.loadStation(0);
+}
+
+loadStation(idx) {
+this.currentStationIdx = idx;
+this.subStep = 0;
+this.updateProgressBar();
+this.showExplainScreen();
+}
+
+updateProgressBar() {
+const total = this.data.stations.length;
+const pct = ((this.currentStationIdx) / total) * 100;
+document.getElementById('progress-fill').style.width = `${pct}%`;
+document.getElementById('global-score').innerText = this.globalScore;
+}
+
+showScreen(id) {
+document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+}
+
+// --- SubStep 0: Explanation ---
+showExplainScreen() {
+this.showScreen('screen-explain');
+const st = this.data.stations[this.currentStationIdx];
+
+document.getElementById('explain-title').innerText = `المحطة ${st.id}: ${st.title}`;
+document.getElementById('explain-text').innerText = st.explain;
+
+// Terms
+const termsGrid = document.getElementById('explain-terms');
+termsGrid.innerHTML = '';
+st.terms.forEach(t => {
+const card = document.createElement('div');
+card.className = 'term-card';
+card.innerHTML = `<strong>${t.term}</strong><span>${t.desc}</span>`;
+termsGrid.appendChild(card);
+});
+
+document.getElementById('explain-info').innerText = st.info;
+this.initVisual(st.visualType);
+}
+
+initVisual(type) {
+const container = document.getElementById('canvas-container');
+container.innerHTML = '';
+
+if (type.startsWith('3d')) {
+// Three.js Render
+this.scene = new THREE.Scene();
+this.camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+this.renderer.setSize(container.clientWidth, container.clientHeight);
+container.appendChild(this.renderer.domElement);
+
+let geometry;
+if (type === '3d-brain') geometry = new THREE.IcosahedronGeometry(1.2, 2);
+else if (type === '3d-cube') geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+else geometry = new THREE.SphereGeometry(1.3, 16, 16);
+
+const material = new THREE.MeshNormalMaterial({ wireframe: true });
+this.currentMesh = new THREE.Mesh(geometry, material);
+this.scene.add(this.currentMesh);
+this.camera.position.z = 3;
+
+let isDragging = false;
+let previousMousePosition = { x: 0, y: 0 };
+
+const onMove = (e) => {
+if (!isDragging) return;
+const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+const deltaX = clientX - previousMousePosition.x;
+const deltaY = clientY - previousMousePosition.y;
+
+this.currentMesh.rotation.y += deltaX * 0.01;
+this.currentMesh.rotation.x += deltaY * 0.01;
+
+previousMousePosition = { x: clientX, y: clientY };
+};
+
+const onStart = (e) => {
+isDragging = true;
+previousMousePosition = {
+x: e.touches ? e.touches[0].clientX : e.clientX,
+y: e.touches ? e.touches[0].clientY : e.clientY
+};
+};
+
+const onEnd = () => { isDragging = false; };
+
+container.addEventListener('mousedown', onStart);
+container.addEventListener('mousemove', onMove);
+window.addEventListener('mouseup', onEnd);
+container.addEventListener('touchstart', onStart);
+container.addEventListener('touchmove', onMove);
+window.addEventListener('touchend', onEnd);
+
+const animate = () => {
+if (!this.renderer) return;
+requestAnimationFrame(animate);
+if (!isDragging && this.currentMesh) {
+this.currentMesh.rotation.y += 0.005;
+}
+this.renderer.render(this.scene, this.camera);
+};
+animate();
+} else {
+// SVG Fallback graphics
+let svgContent = '';
+if (type === 'svg-wave') {
+svgContent = `<svg width="100%" height="100%" viewBox="0 0 300 150">
+<path d="M10,75 Q75,10 150,75 T290,75" fill="none" stroke="#5fd4e8" stroke-width="4"/>
+<circle cx="150" cy="75" r="8" fill="#e8a33d"/>
+</svg>`;
+} else if (type === 'svg-chart') {
+svgContent = `<svg width="100%" height="100%" viewBox="0 0 300 150">
+<rect x="20" y="30" width="40" height="90" fill="#2c3a63"/>
+<rect x="80" y="50" width="40" height="70" fill="#5fd4e8"/>
+<rect x="140" y="10" width="40" height="110" fill="#e8a33d"/>
+<rect x="200" y="60" width="40" height="60" fill="#b18cf0"/>
+</svg>`;
+} else {
+svgContent = `<svg width="100%" height="100%" viewBox="0 0 300 150">
+<polygon points="150,20 230,130 70,130" fill="none" stroke="#4fd88a" stroke-width="4"/>
+<circle cx="150" cy="80" r="15" fill="#4fd88a"/>
+</svg>`;
+}
+container.innerHTML = `<div style="display:flex; justify-content:center; align-items:center; height:100%;">${svgContent}</div>`;
+}
+}
+
+nextSubStep() {
+this.subStep++;
+if (this.subStep === 1) this.showSpeedChallenge();
+else if (this.subStep === 2) this.showQuiz();
+else if (this.subStep === 3) this.showStationResult();
+}
+
+// --- SubStep 1: Speed Challenge ---
+showSpeedChallenge() {
+this.showScreen('screen-speed');
+const st = this.data.stations[this.currentStationIdx];
+
+this.speedTimeLeft = 15;
+this.speedScore = 0;
+document.getElementById('speed-timer').innerText = this.speedTimeLeft;
+document.getElementById('speed-score').innerText = this.speedScore;
+document.getElementById('speed-next-btn').style.display = 'none';
+
+const gameArea = document.getElementById('game-area');
+gameArea.innerHTML = '';
+
+// Combine targets & distractors
+const items = [
+...st.speedTargets.map(t => ({ text: t, isTarget: true })),
+...st.speedDistractors.map(d => ({ text: d, isTarget: false }))
+].sort(() => Math.random() - 0.5);
+
+let activeCardCount = 0;
+
+// Spawn cards
+const spawnInterval = setInterval(() => {
+if (items.length === 0 || this.speedTimeLeft <= 0) {
+clearInterval(spawnInterval);
+return;
+}
+
+const itemData = items.pop();
+const card = document.createElement('div');
+card.className = 'falling-card';
+card.innerText = itemData.text;
+
+const randomX = Math.random() * (gameArea.clientWidth - 110);
+card.style.left = `${Math.max(10, randomX)}px`;
+card.style.top = '-40px';
+
+card.onclick = () => {
+if (itemData.isTarget) {
+this.speedScore += 10;
+card.style.background = 'rgba(79, 216, 138, 0.4)';
+} else {
+this.speedScore = Math.max(0, this.speedScore - 5);
+card.style.background = 'rgba(239, 90, 111, 0.4)';
+}
+document.getElementById('speed-score').innerText = this.speedScore;
+card.remove();
+};
+
+gameArea.appendChild(card);
+
+// Animate fall
+let posY = -40;
+const fallAnim = setInterval(() => {
+if (this.speedTimeLeft <= 0 || !card.parentNode) {
+clearInterval(fallAnim);
+if (card.parentNode) card.remove();
+return;
+}
+posY += 2;
+card.style.top = `${posY}px`;
+if (posY > gameArea.clientHeight) {
+clearInterval(fallAnim);
+card.remove();
+}
+}, 30);
+
+}, 1200);
+
+// Timer
+this.speedTimer = setInterval(() => {
+this.speedTimeLeft--;
+document.getElementById('speed-timer').innerText = this.speedTimeLeft;
+if (this.speedTimeLeft <= 0) {
+clearInterval(this.speedTimer);
+clearInterval(spawnInterval);
+this.globalScore += this.speedScore;
+this.updateProgressBar();
+document.getElementById('speed-next-btn').style.display = 'block';
+}
+}, 1000);
+}
+
+// --- SubStep 2: Quiz ---
+showQuiz() {
+this.showScreen('screen-quiz');
+this.quizCurrentQ = 0;
+this.quizScore = 0;
+this.renderQuizQuestion();
+}
+
+renderQuizQuestion() {
+const st = this.data.stations[this.currentStationIdx];
+const qData = st.quiz[this.quizCurrentQ];
+
+document.getElementById('quiz-q-num').innerText = this.quizCurrentQ + 1;
+document.getElementById('quiz-question').innerText = qData.q;
+document.getElementById('quiz-feedback').className = 'feedback-card';
+document.getElementById('quiz-feedback').style.display = 'none';
+document.getElementById('quiz-next-btn').style.display = 'none';
+
+const optsContainer = document.getElementById('quiz-options');
+optsContainer.innerHTML = '';
+
+// Shuffle options with index tracking
+const shuffledOptions = qData.options.map((opt, idx) => ({ text: opt, originalIdx: idx }))
+.sort(() => Math.random() - 0.5);
+
+shuffledOptions.forEach(opt => {
+const btn = document.createElement('button');
+btn.className = 'option-btn';
+btn.innerText = opt.text;
+btn.onclick = () => this.handleQuizAnswer(opt.originalIdx, qData, btn, optsContainer);
+optsContainer.appendChild(btn);
+});
+}
+
+handleQuizAnswer(selectedIndex, qData, clickedBtn, container) {
+// Disable all options
+const btns = container.querySelectorAll('.option-btn');
+btns.forEach(b => b.style.pointerEvents = 'none');
+
+const feedback = document.getElementById('quiz-feedback');
+feedback.style.display = 'block';
+
+if (selectedIndex === qData.answer) {
+clickedBtn.classList.add('correct');
+feedback.classList.add('correct');
+feedback.innerText = ` إجابة صحيحة! ${qData.explain}`;
+this.quizScore += 10;
+this.globalScore += 10;
+} else {
+clickedBtn.classList.add('wrong');
+feedback.classList.add('wrong');
+feedback.innerText = ` إجابة خاطئة! ${qData.explain}`;
+
+// Record wrong answer
+this.wrongQuestions.push({
+stationTitle: this.data.stations[this.currentStationIdx].title,
+q: qData.q,
+userAns: qData.options[selectedIndex],
+correctAns: qData.options[qData.answer],
+explain: qData.explain
+});
+}
+
+this.updateProgressBar();
+document.getElementById('quiz-next-btn').style.display = 'block';
+}
+
+handleQuizNext() {
+const st = this.data.stations[this.currentStationIdx];
+this.quizCurrentQ++;
+if (this.quizCurrentQ < st.quiz.length) {
+this.renderQuizQuestion();
+} else {
+this.nextSubStep();
+}
+}
+
+// --- SubStep 3: Station Result ---
+showStationResult() {
+this.showScreen('screen-station-result');
+
+// Calculate stars
+let stars = 1;
+if (this.quizScore >= 20 && this.speedScore >= 20) stars = 3;
+else if (this.quizScore >= 10 || this.speedScore >= 10) stars = 2;
+
+this.stationStars.push({ stationId: this.currentStationIdx + 1, stars });
+
+const starsContainer = document.getElementById('station-stars');
+starsContainer.innerHTML = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+
+document.getElementById('station-result-text').innerText =
+`حققت ${stars} نجوم في هذه المحطة! (نقاط التحدي: ${this.speedScore} + نقاط الأسئلة: ${this.quizScore})`;
+}
+
+finishStation() {
+this.currentStationIdx++;
+if (this.currentStationIdx < this.data.stations.length) {
+this.loadStation(this.currentStationIdx);
+} else {
+this.showScenario();
+}
+}
+
+// --- Final Scenario Challenge ---
+showScenario() {
+this.showScreen('screen-scenario');
+const sc = this.data.finalScenario;
+
+document.getElementById('scenario-desc').innerText = sc.description;
+const optsContainer = document.getElementById('scenario-options');
+optsContainer.innerHTML = '';
+document.getElementById('scenario-next-btn').style.display = 'none';
+
+sc.options.forEach((opt) => {
+const btn = document.createElement('button');
+btn.className = 'option-btn';
+btn.innerText = opt.text;
+btn.onclick = () => {
+const btns = optsContainer.querySelectorAll('.option-btn');
+btns.forEach(b => b.style.pointerEvents = 'none');
+
+const fb = document.getElementById('scenario-feedback');
+fb.style.display = 'block';
+if (opt.type === 'مثالي') {
+btn.classList.add('correct');
+fb.className = 'feedback-card correct';
+this.globalScore += 30;
+} else if (opt.type === 'مقبول') {
+btn.style.borderColor = 'var(--gold)';
+fb.className = 'feedback-card';
+fb.style.background = 'rgba(232, 163, 61, 0.15)';
+fb.style.color = 'var(--gold)';
+this.globalScore += 15;
+} else {
+btn.classList.add('wrong');
+fb.className = 'feedback-card wrong';
+}
+fb.innerText = `التقييم: [${opt.type}] - ${opt.explain}`;
+this.updateProgressBar();
+document.getElementById('scenario-next-btn').style.display = 'block';
+};
+optsContainer.appendChild(btn);
+});
+}
+
+// --- Final Screen & Certificates ---
+showFinalResults() {
+this.showScreen('screen-final');
+document.getElementById('top-bar').style.display = 'none';
+
+document.getElementById('final-total-score').innerText = this.globalScore;
+
+// Badge Determination
+let badgeIcon = '🥉';
+let badgeTitle = 'الوسام البرونزي';
+if (this.globalScore >= 200) {
+badgeIcon = '🥇';
+badgeTitle = 'الوسام الذهبي - خبير الذكاء الاصطناعي';
+} else if (this.globalScore >= 120) {
+badgeIcon = '🥈';
+badgeTitle = 'الوسام الفضي - مستكشف المهارات التقنية';
+}
+
+document.getElementById('final-badge-icon').innerText = badgeIcon;
+document.getElementById('final-badge-title').innerText = badgeTitle;
+
+// Summary Stars
+const starsSummary = document.getElementById('final-stars-summary');
+starsSummary.innerHTML = '';
+this.stationStars.forEach(st => {
+const div = document.createElement('div');
+div.style.display = 'flex';
+div.style.justifyContent = 'space-between';
+div.style.marginBottom = '6px';
+div.style.fontSize = '0.9rem';
+div.innerHTML = `<span>المحطة ${st.stationId}</span> <span style="color:var(--gold);">${'★'.repeat(st.stars)}</span>`;
+starsSummary.appendChild(div);
+});
+
+// Review Wrong Questions
+const reviewList = document.getElementById('final-review-list');
+reviewList.innerHTML = '';
+if (this.wrongQuestions.length === 0) {
+reviewList.innerHTML = '<p style="color:var(--green);">رائع! لم تقم بأي إجابة خاطئة خلال اللعبة. 👏</p>';
+} else {
+this.wrongQuestions.forEach(item => {
+const card = document.createElement('div');
+card.className = 'review-item';
+card.innerHTML = `
+<div style="color:var(--cyan); font-weight:bold; margin-bottom:4px;">${item.stationTitle}</div>
+<div style="color:#fff; margin-bottom:4px;"><strong>السؤال:</strong> ${item.q}</div>
+<div style="color:var(--red);">إجابتك: ${item.userAns}</div>
+<div style="color:var(--green);">الإجابة الصحيحة: ${item.correctAns}</div>
+<div style="color:var(--text-muted); font-size:0.8rem; margin-top:4px;">${item.explain}</div>
+`;
+reviewList.appendChild(card);
+});
+}
+
+this.saveBestScore();
+}
+
+saveBestScore() {
+try {
+const saved = localStorage.getItem('ai_game_best_score');
+if (!saved || this.globalScore > parseInt(saved)) {
+localStorage.setItem('ai_game_best_score', this.globalScore.toString());
+}
+} catch (e) {
+console.warn("Storage access not allowed", e);
+}
+}
+
+loadBestScore() {
+try {
+const saved = localStorage.getItem('ai_game_best_score');
+if (saved) {
+console.log("أفضل نتيجة سابقة:", saved);
+}
+} catch (e) {
+console.warn("Storage access not allowed", e);
+}
+}
+}
+
+// Global Game Instantiation
+const game = new GameEngine(lessonData);
+window.onload = () => game.init();
+</script>
+</body>
+</html>
